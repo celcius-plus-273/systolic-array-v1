@@ -1,7 +1,12 @@
-TOPLEVEL=fsm
+TESTBENCH=tb_comp_array_only
+
 TESTNAME=default
+
 SRC_VERILOG=../../src/rtl/systolic
-SRC_FOLDER= $(SRC_VERILOG)
+SRC_VERIF=../../src/verif
+RTL_FOLDER=$(SRC_VERILOG)
+TB_FOLDER=$(SRC_VERIF)/testbench
+
 DEBUG=1
 VCS=1
 
@@ -19,27 +24,23 @@ endif
 
 # Move all the verilog files from the source directory over to this simulation directory
 link_src:
-	find $(SRC_FOLDER) -name '*.v' -exec ln -s -f {} ';'
-	find $(SRC_FOLDER) -name '*.sv' -exec ln -s -f {} ';'
-	find $(SRC_FOLDER) -name '*.svh' -exec ln -s -f {} ';'
-	find $(SRC_FOLDER) -name '*.include' -exec ln -s -f {} ';'
+	ln -s $(RTL_FOLDER) .
+	ln -s $(TB_FOLDER) .
+	ln -s $(SRC_VERIF)/include/$(TESTBENCH).include .
 
-$(TOPLEVEL).include:
-	echo $(SRC) > $(TOPLEVEL).include
 
 # A new option has been added here. Take a closer look at -cm. Look it up!
-vcs:$(TOPLEVEL).include
-	vcs -f $(TOPLEVEL).include +v2k -R +lint=all -sverilog -full64 \
+vcs:$(TESTBENCH).include
+	vcs -f $(TESTBENCH).include +v2k -R +lint=all -sverilog -full64 \
 		-timescale=1ns/10ps -debug_access+all -debug_region+cell+encrypt \
-		-debug_access -l $(TOPLEVEL).log +define+$(VERILOG_DEFINES) +testname=$(TESTNAME) \
+		-debug_access -l $(TESTBENCH).log +define+$(VERILOG_DEFINES) +testname=$(TESTNAME) \
 		-cm fsm+line+assert \
 		-lca -kdb
 		# simv 
 
 wipe: clean
-	rm -rf $(TOPLEVEL).include
+	rm -rf $(TESTBENCH).include
 	rm -rf alib-52
-	rm -rf $(TOPLEVEL)
 	rm -rf simv.daidir
 	rm -rf DVEfiles
 	rm -rf *.log
@@ -53,6 +54,8 @@ wipe: clean
 	rm -rf verdi_config_file
 	rm -rf verdiLog
 	rm -rf *.fsdb
+	rm -rf systolic
+	rm -rf testbench
 
 clean:
 	rm -rf DVEfiles
@@ -60,7 +63,7 @@ clean:
 	rm -rf *.vpd
 	rm -rf ucli.key
 	rm -rf alib-52
-	rm -rf $(TOPLEVEL)
+	rm -rf $(TESTBENCH)
 	rm -rf simv.daidir
 	rm -rf csrc
 	rm -rf simv

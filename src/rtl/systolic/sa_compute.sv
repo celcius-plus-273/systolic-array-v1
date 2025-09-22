@@ -80,14 +80,14 @@ module sa_compute
     // Input Weights and Psums
     genvar n;
     generate
-        for (n = 0; n < NUM_COLS; n += 1) begin
+        for (n = 0; n < NUM_COLS; n += 1) begin : gen_i_weight_psum
             assign col_inter[0][n] = i_load_psum ? i_psum[n] : i_weight[n];
         end
     endgenerate
 
     // Input Act
     generate
-        for (n = 0; n < NUM_ROWS; n += 1) begin
+        for (n = 0; n < NUM_ROWS; n += 1) begin : gen_i_act
             // For WS Systolic, iActs need to be shifted, the compute array expects
             // a shifted set of i_act i.e. it will take the entire iActs word and pass
             // it into the array. 
@@ -98,7 +98,7 @@ module sa_compute
 
     // Output sum (total or partial)
     generate
-        for (n = 0; n < NUM_COLS; n += 1) begin
+        for (n = 0; n < NUM_COLS; n += 1) begin : gen_o_psum
             // last row of column interconnect
             assign o_psum[n] = col_inter[NUM_ROWS][n];
         end
@@ -111,8 +111,8 @@ module sa_compute
         // Output activations for visualization of iAct propagation through array
         logic [MUL_DATAWIDTH-1 : 0] o_act [NUM_ROWS];
         generate
-            for (n = 0; n < NUM_ROWS; n += 1) begin
-                assign o_act[n] = row_inter[n][NUM_COLS]
+            for (n = 0; n < NUM_ROWS; n += 1) begin : gen_o_act
+                assign o_act[n] = row_inter[n][NUM_COLS];
             end
         endgenerate
     `endif

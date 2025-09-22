@@ -26,7 +26,7 @@ module sa_pe
 
     // output
     output logic [MUL_DATAWIDTH-1 : 0] o_act, // pass activation to neighbor PE
-    output logic [ADD_DATAWIDTH-1 : 0] o_weight_psum,
+    output logic [ADD_DATAWIDTH-1 : 0] o_weight_psum
 );
 
     // weight register
