@@ -115,6 +115,62 @@ module sa_compute
                 assign o_act[n] = row_inter[n][NUM_COLS];
             end
         endgenerate
+
+        // Expose all of the internal weight registers
+        logic [MUL_DATAWIDTH-1:0] systolic_weights [NUM_ROWS][NUM_COLS];  // array of wires
+        genvar x, y;
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_weights[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.weight_r;
+                end
+            end
+        endgenerate
+
+        logic [MUL_DATAWIDTH-1:0] systolic_input_weights [NUM_ROWS][NUM_COLS];  // array of wires
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_input_weights[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_weight;
+                end
+            end
+        endgenerate
+
+        logic [MUL_DATAWIDTH-1:0] systolic_inputs [NUM_ROWS][NUM_COLS];  // array of wires
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_inputs[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_act;
+                end
+            end
+        endgenerate
+
+        logic [ADD_DATAWIDTH-1:0] systolic_outputs [NUM_ROWS][NUM_COLS];  // array of wires
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_outputs[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.o_weight_psum;
+                end
+            end
+        endgenerate
+
+        logic [ADD_DATAWIDTH-1:0] systolic_psums [NUM_ROWS][NUM_COLS];  // array of wires
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_psums[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_psum;
+                end
+            end
+        endgenerate
+
+        logic [ADD_DATAWIDTH-1:0] systolic_mode [NUM_ROWS][NUM_COLS];  // array of wires
+        generate
+            for (y = 0; y < NUM_ROWS; y += 1) begin
+                for (x = 0; x < NUM_COLS; x += 1) begin
+                    assign systolic_mode[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_mode;
+                end
+            end
+        endgenerate
     `endif
 
     // TODO: Add functional coverage :)
