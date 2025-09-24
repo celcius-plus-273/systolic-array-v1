@@ -9,7 +9,9 @@ module sa_compute
     input logic clk,
     input logic rst_n,
 
-    // mode
+    // mode:
+    //  0: weight pre-load
+    //  1: compute
     input logic i_mode,
 
     // Is this a better idea than having an external accumulator block?
