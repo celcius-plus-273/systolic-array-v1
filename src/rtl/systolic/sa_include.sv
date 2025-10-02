@@ -1,6 +1,6 @@
-///////////////////////
-/// PACKAGE: SA_PKG ///
-///////////////////////
+// ----------------------- //
+// --- PACKAGE: SA_PKG --- //
+// ----------------------- //
 package sa_pkg;
     typedef enum logic [1:0] {  
         IDLE    = 2'b00,
@@ -10,22 +10,12 @@ package sa_pkg;
         STATEX  = 2'bxx
     } sa_state_e;
 
-    typedef struct packed {
-        // weight offset
-        // input offset
-        // output offset
-        // streaming dimension (M)
-    } data_config_s;
+    // typedef struct packed {
+    //     // weight offset
+    //     // input offset
+    //     // output offset
+    //     // streaming dimension (M)
+    // } data_config_s;
 endpackage
 
-////////////////////////
-/// INTERFACE: PE_IF ///
-////////////////////////
-// interface pe_if
-// #(
-//     parameter ADD_DATAWIDTH,
-//     parameter MUL_DATAWIDTH
-// )();
-//
-// endinterface
-
+// Define any interfaces down here...

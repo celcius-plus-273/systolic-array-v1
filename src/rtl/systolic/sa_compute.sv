@@ -124,7 +124,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_weights[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.weight_r;
+                    assign systolic_weights[y][x] = row_coord[y].col_coord[x].sa_pe_inst.weight_r;
                 end
             end
         endgenerate
@@ -133,7 +133,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_input_weights[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_weight;
+                    assign systolic_input_weights[y][x] = row_coord[y].col_coord[x].sa_pe_inst.i_weight;
                 end
             end
         endgenerate
@@ -142,7 +142,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_inputs[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_act;
+                    assign systolic_inputs[y][x] = row_coord[y].col_coord[x].sa_pe_inst.i_act;
                 end
             end
         endgenerate
@@ -151,7 +151,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_outputs[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.o_weight_psum;
+                    assign systolic_outputs[y][x] = row_coord[y].col_coord[x].sa_pe_inst.o_weight_psum;
                 end
             end
         endgenerate
@@ -160,7 +160,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_psums[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_psum;
+                    assign systolic_psums[y][x] = row_coord[y].col_coord[x].sa_pe_inst.i_psum;
                 end
             end
         endgenerate
@@ -169,7 +169,7 @@ module sa_compute
         generate
             for (y = 0; y < NUM_ROWS; y += 1) begin
                 for (x = 0; x < NUM_COLS; x += 1) begin
-                    assign systolic_mode[y][x] = dut0.row_coord[y].col_coord[x].sa_pe_inst.i_mode;
+                    assign systolic_mode[y][x] = row_coord[y].col_coord[x].sa_pe_inst.i_mode;
                 end
             end
         endgenerate

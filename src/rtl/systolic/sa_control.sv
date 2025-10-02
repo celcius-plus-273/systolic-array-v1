@@ -1,11 +1,13 @@
-import sa_pkg::*;
 
 module sa_control
 #(
     // memory parameters
-    parameter INPUT_MEM_WIDTH,
-    parameter WEIGHT_MEM_WIDTH,
-    parameter OUTPUT_MEM_WIDTH,
+    parameter INPUT_WIDTH,      // input mem width
+    parameter INPUT_HEIGHT,     // input mem height
+    parameter WEIGHT_WIDTH,     // weight mem width
+    parameter WEIGHT_HEIGHT,    // weight mem height
+    parameter OUTPUT_WIDTH,     // output mem width
+    parameter OUTPUT_HEIGHT,    // output mem height
 
     // array params
     parameter NUM_ROWS,
@@ -18,16 +20,19 @@ module sa_control
     //-- Memory Interfaces --//
     // for now we will use fake memories that rely on a start signal :)
     // i_act memory interface
-    output logic                            r_input_en,
-    output logic [INPUT_MEM_WIDTH-1 : 0]    r_input_addr,
+    output logic                                r_input_cenb,
+    output logic                                r_input_wenb,
+    output logic [$clog2(INPUT_HEIGHT)-1 : 0]   r_input_addr,
 
     // i_weight memory interface
-    output logic                            r_weight_en,
-    output logic [WEIGHT_MEM_WIDTH-1 : 0]   r_weight_addr,
+    output logic                                r_weight_cenb,
+    output logic                                r_weight_wenb,
+    output logic [$clog2(WEIGHT_HEIGHT)-1 : 0]  r_weight_addr,
 
     // o_act memory interface
-    output logic                            w_output_en,
-    output logic [OUTPUT_MEM_WIDTH-1 : 0]   w_output_addr,
+    output logic                                w_output_cenb,
+    output logic                                w_output_wenb,
+    output logic [$clog2(OUTPUT_HEIGHT)-1 : 0]  w_output_addr,
 
     // o_psum memory interface (won't use for now)
 
@@ -42,8 +47,9 @@ module sa_control
     output logic o_mode,
     output logic o_load_psum
 );
-    //-- localparams --//
-    localparam MAX_COUNT   = (NUM_COLS + NUM_ROWS - 1) + NUM_COLS
+    //-- localparams  & imports --//
+    import sa_pkg::*;
+    localparam MAX_COUNT   = (NUM_COLS + NUM_ROWS - 1) + NUM_COLS;
     localparam COUNT_WIDTH = $clog2(MAX_COUNT);
 
     //-- state variable --//
@@ -69,7 +75,7 @@ module sa_control
     //-- next state comb --//
     always_comb begin : next_state_comb
         // default assignments
-        next_state = 'x;
+        next_state = STATEX;
         next_count = 'x;
 
         case (curr_state)
@@ -90,7 +96,7 @@ module sa_control
                 next_count = (count_r == (MAX_COUNT - 1)) ? '0 : count_r + 1'b1;
             end
             default: begin
-                next_state = 'x;
+                next_state = STATEX;
                 next_count = 'x;
             end
         endcase
@@ -100,11 +106,14 @@ module sa_control
     always_ff @( posedge clk or negedge rst_n ) begin : output_ff
         if (!rst_n) begin
             // reset memory addr pointers
-            r_input_en      <= 1'b0;
+            r_input_cenb    <= 1'b1;
+            r_input_wenb    <= 1'b1;
             r_input_addr    <= '0;
-            r_weight_en     <= 1'b0;
+            r_weight_cenb   <= 1'b1;
+            r_weight_wenb   <= 1'b1;
             r_weight_addr   <= '0;
-            w_output_en     <= 1'b0;
+            w_output_cenb   <= 1'b1;
+            w_output_wenb   <= 1'b1;
             w_output_addr   <= '0;
 
             // reset o_done
@@ -116,12 +125,16 @@ module sa_control
         end
         else begin
             // default outputs
-            r_input_en      <= 1'b0;
+            r_input_cenb    <= 1'b1;
+            r_input_wenb    <= 1'b1;
             r_input_addr    <= '0;
-            r_weight_en     <= 1'b0;
+            r_weight_cenb   <= 1'b1;
+            r_weight_wenb   <= 1'b1;
             r_weight_addr   <= '0;
-            w_output_en     <= 1'b0;
+            w_output_cenb   <= 1'b1;
+            w_output_wenb   <= 1'b1;
             w_output_addr   <= '0;
+
             // o_done <= 1'b0; // we actually want o_done to preserve it's prev value
             o_mode      <= 1'b0;
             o_load_psum <= 1'b0;
@@ -130,36 +143,46 @@ module sa_control
                 IDLE: begin
                     // set output to done?
                     o_done = 1'b1;
+                    // for the future might want to add ready signal :)
                 end
                 PRELOAD: begin
-                    // need to en weight read
-                    r_weight_en <= 1'b1;
-                    r_weight_addr <= r_weight_en ? r_weight_addr + 1'b1 : r_weight_addr;
+                    r_weight_cenb <= 1'b0;                                                  // enable weight mem
+                    r_weight_wenb <= 1'b1;                                                  // read mode
+                    r_weight_addr <= r_weight_cenb ? r_weight_addr : r_weight_addr + 1'b1;  // addr
 
                     o_mode = 1'b0; // set systolic to preload
                     o_done <= 1'b0; // actually reset o_done :)
                 end
                 STREAM: begin
                     // we enable read act inputs for COLS + ROWS - 1 cycles
-                    r_input_en <= (count_r <= (NUM_COLS + NUM_ROWS - 2)) ? 1'b1 : 1'b0; 
-                    r_input_addr <= r_input_en ? r_input_addr + 1'b1 : r_input_addr;
+                    r_input_cenb <= (count_r <= (NUM_COLS + NUM_ROWS - 2)) ? 1'b0 : 1'b1;   // enable act mem
+                    r_input_wenb <= 1'b1;                                                   // read mode
+                    r_input_addr <= r_input_cenb ? r_input_addr : r_input_addr + 1'b1;      // addr
 
                     // next we enable write output acts for remaining cycles
                     // note that there is one cycle of overlap!
-                    w_output_en <= (count_r >= (NUM_COLS + NUM_ROWS - 2)) ? 1'b1 : 1'b0; 
-                    w_output_addr <= w_output_en ? w_output_addr + 1'b1 : w_output_addr;
+                    w_output_cenb <= (count_r >= (NUM_COLS + NUM_ROWS - 2)) ? 1'b0 : 1'b1;  // enable output mem
+                    w_output_wenb <= 1'b0;                                                  // write mode
+                    w_output_addr <= w_output_cenb ? w_output_addr : w_output_addr + 1'b1;  // addr
 
                     o_mode = 1'b1;      // set systolic to compute mode
                     o_load_psum = 1'b1; // we need to clear the i_weight port or just swtich it to psum (will be tied to 0)
                 end
-                default: 
-                    r_input_en      <= 'x;
+                default: begin
+                    // for debug purposes
+                    r_input_cenb    <= 'x;
+                    r_input_wenb    <= 'x;
                     r_input_addr    <= 'x;
-                    r_weight_en     <= 'x;
+                    r_weight_cenb   <= 'x;
+                    r_weight_wenb   <= 'x;
                     r_weight_addr   <= 'x;
-                    w_output_en     <= 'x;
+                    w_output_cenb   <= 'x;
+                    w_output_wenb   <= 'x;
                     w_output_addr   <= 'x;
+                    o_mode          <= 'x;
+                    o_load_psum     <= 'x;
                     o_done          <= 'x;
+                end
             endcase
         end
     end

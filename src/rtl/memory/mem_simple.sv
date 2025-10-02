@@ -1,29 +1,52 @@
+// Single Port Memory Model
 module mem_simple
 #(
     // size of memory
-    parameter NUM_ENTIRES,
+    parameter NUM_ENTRIES,
     parameter DATA_WIDTH,
-    parameter WORD_SIZE,
 
     // localparams
-    parameter ADDR_WIDTH = $clog2(NUM_ENTIRES)
+    parameter ADDR_WIDTH = $clog2(NUM_ENTRIES)
 ) (
     // clk, rst
     input logic clk,
     input logic rst_n,
 
-    // read ports
-    input  logic                    r_en,
-    input  logic [ADDR_WIDTH-1 : 0] r_addr,
-    output logic [WORD_SIZE-1  : 0] r_data,
+    // chip enable and write enable
+    input logic i_cenb,         // chip enable (active low)
+    input logic i_wenb,         // write enable (active low)
 
-    // write ports
-    input  logic                    w_en,
-    input  logic [ADDR_WIDTH-1 : 0] w_addr,
-    input  logic [WORD_SIZE-1  : 0] w_data
+    // Single Port memory
+    input  logic [ADDR_WIDTH-1 : 0] i_addr,
+    input  logic [DATA_WIDTH-1  : 0] i_data,
+    output logic [DATA_WIDTH-1  : 0] o_data
 );
+    // localparams and variables
+    integer i;
 
     // simple behavioral memory :)
-    logic [WORD_SIZE-1 : 0] mem_array [NUM_ENTIRES];
+    logic [DATA_WIDTH-1 : 0] mem_array [NUM_ENTRIES];
+
+    // ff read and write logic
+    always_ff @( posedge clk or negedge rst_n ) begin : read_write_ff
+        // reset memory
+        if (!rst_n) begin
+            for (i = 0; i < NUM_ENTRIES; i += 1) begin
+                mem_array[i] <= '0;
+            end
+        end
+        // normal behavior
+        else begin
+            // memory can only read OR write (can't do both)
+            if (i_wenb) begin
+                // wenb = 1: READ
+                o_data <= i_cenb ? o_data : mem_array[i_addr];
+            end
+            else begin
+                // wenb = 0: WRITE
+                mem_array[i_addr] <= i_cenb ? mem_array[i_addr] : i_data;
+            end
+        end
+    end
     
 endmodule

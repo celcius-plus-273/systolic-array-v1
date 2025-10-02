@@ -1,8 +1,8 @@
-TESTBENCH=tb_comp_array_only
+TESTBENCH=tb_matmul
 
 TESTNAME=default
 
-SRC_VERILOG=../../src/rtl/systolic
+SRC_VERILOG=../../src/rtl
 SRC_VERIF=../../src/verif
 RTL_FOLDER=$(SRC_VERILOG)
 TB_FOLDER=$(SRC_VERIF)/testbench
@@ -54,7 +54,7 @@ wipe: clean
 	rm -rf verdi_config_file
 	rm -rf verdiLog
 	rm -rf *.fsdb
-	rm -rf systolic
+	rm -rf rtl
 	rm -rf testbench
 
 clean:
