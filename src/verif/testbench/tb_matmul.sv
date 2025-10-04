@@ -177,59 +177,11 @@ task automatic sanity_weight_pre_load();
     print_weight_r();
 endtask
 
-// Sanity test for i_act forwarding
-//  - generate random i_act
-//  - set array to compute mode (DEBUG = 1)
-//  - push i_act
-//  - check o_act
-// task automatic sanity_act_forward();
-//     // reset
-//     reset_signals();
-
-//     // generate random activations
-//     generate_random_inputs();
-
-//     // sync with posedge
-//     @(posedge clk);
-//     // set array to compute
-//     i_mode = 1'b1;
-
-//     // reset count
-//     count = 0;
-
-//     for (i = 0; i < I_ACT_WIDTH + O_ACT_WIDTH - 1; i += 1) begin
-//         // pass in i_act
-//         i_act = input_buffer[i];
-
-//         @(posedge clk);
-//         count += 1;
-
-//         // need to sample at negedge bc of non-blocking assignment
-//         if (count >= NUM_COLS) begin
-//             @(negedge clk);
-//             // assert o_act == i_act
-//             assert(dut0.o_act == input_buffer[out_count])
-
-//             // debug print
-//             print_act_vector(dut0.o_act);
-//             $write(" =? ");
-//             print_act_vector(input_buffer[out_count]);
-//             $write("\n");
-
-//             // increment output counter
-//             out_count += 1;
-//         end
-//     end
-// endtask
-
-// // Functional test (First Smoke test)
-// //  - generate random data on i_act buffer
-// //  - generate random data on i_weight buffer
-// //  - pre-load weight buffer (i_mode = 0)
-// //  - stream activations (i_mode = 1)
-// //  - collect outputs
-// //      - wait NUM_COLS cycles
-// //      - write result to output buffer until 
+// Functional test (First Smoke test)
+//  - generate random data on i_act buffer
+//  - generate random data on i_weight buffer
+//  - start matmul
+//  - write output results when done_o = 1
 task automatic smoke_random_mult;
     // reset
     reset_signals();
@@ -241,11 +193,11 @@ task automatic smoke_random_mult;
     // start matmul
     start_matmul();
     
+    // results are ready
     @(posedge o_done);
 
     // verify output (for now we just dump it into output_mem.hex)
     $writememh("bin/output_mem.hex", dut0.output_mem.mem_array);
-    
 endtask
 
 endmodule

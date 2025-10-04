@@ -1,12 +1,32 @@
 import numpy as np
+import sys
+
+def to_twos_comp(val, bytes=1):
+    val_str = int(val).to_bytes(bytes, 'big', signed=True)
+
+    return val_str.hex()
+
+def from_twos_comp(val, bytes=1, format='h'):
+    if format == 'b':
+        bits = 2
+    elif format =='h':
+        bits = 16
+    else:
+        print(f"[ERROR]: Unknown format: {format}")
+        exit(-1)
+
+    unsgined_val = int(val, bits).to_bytes(bytes, 'big', signed=False)
+
+    return int.from_bytes(unsgined_val, 'big', signed=True)
 
 def to_bin(file, A, rows, cols, format='h'):
     # write memory to output format [bin/hex]
     f = open(file, 'w')
     for i in range(rows):
         for j in range(cols):
-            assert A[i][j] < 128 # saturate 8 bits
-            f.write(f'{A[i][j]:02x}')
+            assert (A[i][j] <= 127 and A[i][j] >= -128) # saturate 8 bits
+            val = to_twos_comp(A[i][j])
+            f.write(f'{val}')
         f.write('\n')
 
 # Converts a staggered matrix back into a non-staggered matrix
@@ -71,13 +91,16 @@ def horizontal_flip(A):
 def random_matrix(range, dim):
     return np.random.randint(range[0], range[1], dim)
 
+def overflow_matmul(A, B):
+    pass
+
 def main():
     K = 4
     M = 4
     N = 4
 
     # need to generate 4x4 weight matrix and 4x4 input matrix (with staggering)
-    low = 1
+    low = -8
     high = 8
     weight_matrix = random_matrix((low, high), (K, N))
     input_matrix = random_matrix((low, high), (M, K))

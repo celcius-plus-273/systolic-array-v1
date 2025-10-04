@@ -22,14 +22,14 @@ module sa_compute
 
     // inputs
     // i_act buffer & weight buffer
-    input logic [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS],
-    input logic [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS],
+    input logic signed [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS],
+    input logic signed [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS],
 
     // intermediate partial sums buffer
-    input logic [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS],
+    input logic signed [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS],
 
     // output partial sums buffer
-    output logic [ADD_DATAWIDTH-1 : 0] o_psum   [NUM_COLS]
+    output logic signed [ADD_DATAWIDTH-1 : 0] o_psum   [NUM_COLS]
 );
 
     // --------------------------------------- //
@@ -39,13 +39,13 @@ module sa_compute
     // Dimensions: (NUM_ROWS)x(NUM_COLS+1)
     // Note: NUM_COLS + 1 is needed for the output of the right-most PEs
     //       which gets connected to an o_act signal used with DEBUG ifdef
-    wire [MUL_DATAWIDTH-1 : 0] row_inter [NUM_ROWS][NUM_COLS+1]; // row_inter[j][i]
+    wire signed [MUL_DATAWIDTH-1 : 0] row_inter [NUM_ROWS][NUM_COLS+1]; // row_inter[j][i]
 
     // Column-wise (vertical) interconnection
     // Dimensions: (NUM_ROWS+1)x(NUM_COLS)
     // Note: NUM_ROWS + 1 is needed for the output of the bottom-most PEs
     //       which is connected to o_psum
-    wire [ADD_DATAWIDTH-1 : 0] col_inter [NUM_ROWS+1][NUM_COLS]; // column_inter[j][i]
+    wire signed [ADD_DATAWIDTH-1 : 0] col_inter [NUM_ROWS+1][NUM_COLS]; // column_inter[j][i]
 
     // ---------------------------------------- //
     // ------ PE Array Generate For-Loop ------ //

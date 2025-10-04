@@ -1,5 +1,18 @@
 import numpy as np
 
+def from_twos_comp(val, bytes=1, format='h'):
+    if format == 'b':
+        bits = 2
+    elif format =='h':
+        bits = 16
+    else:
+        print(f"[ERROR]: Unknown format: {format}")
+        exit(-1)
+
+    unsgined_val = int(val, bits).to_bytes(bytes, 'big', signed=False)
+
+    return int.from_bytes(unsgined_val, 'big', signed=True)
+
 def read_output_mem(file, rows, cols):
     B = np.zeros((rows + cols - 1, cols), dtype=int)
     f = open(file, 'r')
@@ -11,7 +24,7 @@ def read_output_mem(file, rows, cols):
             start = 2*j
             end = (2*j) + 1
             entry = line[start:end+1]
-            B[i][j] = int(entry, 16)
+            B[i][j] = from_twos_comp(entry)
 
     return B
 
@@ -26,7 +39,7 @@ def read_golden(file, rows, cols):
             start = 2*j
             end = (2*j) + 1
             entry = line[start:end+1]
-            B[i][j] = int(entry, 16)
+            B[i][j] = from_twos_comp(entry)
 
     return B
 

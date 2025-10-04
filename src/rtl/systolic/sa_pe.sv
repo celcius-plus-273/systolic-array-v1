@@ -20,21 +20,21 @@ module sa_pe
     input logic i_mode,
 
     // inputs: i_act, and i_weight, i_psum
-    input logic [MUL_DATAWIDTH-1 : 0] i_act,
-    input logic [MUL_DATAWIDTH-1 : 0] i_weight, // mul vs add datawidth...?
-    input logic [ADD_DATAWIDTH-1 : 0] i_psum,
+    input logic signed [MUL_DATAWIDTH-1 : 0] i_act,
+    input logic signed [MUL_DATAWIDTH-1 : 0] i_weight, // mul vs add datawidth...?
+    input logic signed [ADD_DATAWIDTH-1 : 0] i_psum,
 
     // output
-    output logic [MUL_DATAWIDTH-1 : 0] o_act, // pass activation to neighbor PE
-    output logic [ADD_DATAWIDTH-1 : 0] o_weight_psum
+    output logic signed [MUL_DATAWIDTH-1 : 0] o_act, // pass activation to neighbor PE
+    output logic signed [ADD_DATAWIDTH-1 : 0] o_weight_psum
 );
 
     // weight register
     //  for now we will only hold a single weight on the PE
-    logic [MUL_DATAWIDTH-1 : 0] weight_r;
+    logic signed [MUL_DATAWIDTH-1 : 0] weight_r;
 
     // mac output psum
-    logic [ADD_DATAWIDTH-1: 0] mac_psum;
+    logic signed [ADD_DATAWIDTH-1: 0] mac_psum;
 
     // PE inputs
     always_ff @(posedge clk or negedge rst_n) begin : pe_in_ff

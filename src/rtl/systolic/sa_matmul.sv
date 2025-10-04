@@ -123,10 +123,10 @@ module sa_matmul
     //----------------------------------//
     //--- Systolic Computation Array ---//
     //----------------------------------//
-    logic [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS];
-    logic [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS];
-    logic [ADD_DATAWIDTH-1 : 0] o_act     [NUM_COLS];
-    logic [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS];
+    logic signed [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS];
+    logic signed [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS];
+    logic signed [ADD_DATAWIDTH-1 : 0] o_act     [NUM_COLS];
+    logic signed [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS];
     sa_compute #(
         .MUL_DATAWIDTH(MUL_DATAWIDTH),
         .ADD_DATAWIDTH(ADD_DATAWIDTH),
