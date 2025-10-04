@@ -10,6 +10,8 @@ TB_FOLDER=$(SRC_VERIF)/testbench
 DEBUG=1
 VCS=1
 
+PYTHON=python3.8
+
 #Build up a list of verilog define statements to be used by vcs
 
 VERILOG_DEFINES:= 
@@ -26,8 +28,16 @@ endif
 link_src:
 	ln -s $(RTL_FOLDER) .
 	ln -s $(TB_FOLDER) .
+	ln -s $(SRC_VERIF)/scripts .
 	ln -s $(SRC_VERIF)/include/$(TESTBENCH).include .
 
+mem:
+	rm -rf bin
+	mkdir bin
+	$(PYTHON) scripts/mem_matrix_bin.py
+
+verif:
+	$(PYTHON) scripts/compare.py
 
 # A new option has been added here. Take a closer look at -cm. Look it up!
 vcs:$(TESTBENCH).include
@@ -55,6 +65,8 @@ wipe: clean
 	rm -rf verdiLog
 	rm -rf *.fsdb
 	rm -rf rtl
+	rm -rf bin
+	rm -rf scripts
 	rm -rf testbench
 
 clean:

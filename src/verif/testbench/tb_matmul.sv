@@ -36,6 +36,7 @@ sa_matmul #(
 
 // Test variables
 int cycle = 0;
+bit count_en;
 
 initial begin
     string dumpfile = "matmul";
@@ -55,16 +56,16 @@ initial begin
     reset_signals();
 
     // run sanity tests
-    sanity_weight_pre_load();
+    // sanity_weight_pre_load();
 
-    repeat(100) @(posedge clk);
+    smoke_random_mult();
 
     // exit sim
     $finish;
 end
 
 always @(posedge clk) begin
-    cycle += 1;
+    if (count_en) cycle += 1;
 end
 
 // Monitor FSM of design :)
@@ -72,6 +73,14 @@ always @(negedge clk) begin
     $display("========== CYCLE: %0d ===========", cycle);
     $display("STATE = %0s", dut0.sys_array_ctrl.curr_state);
     $display("COUNT_R = %0d", dut0.sys_array_ctrl.count_r);
+
+    print_PE(0, 0);
+    print_PE(1, 0);
+    print_PE(2, 0);
+    print_PE(3, 0);
+    print_PE(3, 1);
+    print_PE(3, 2);
+    print_PE(3, 3);
 end
 
 // ------------------------------------------------ //
@@ -79,13 +88,14 @@ end
 // ------------------------------------------------ //
 int i, j, n; // for loops
 
-function print_PE(int i, int j);
+// Print PE: shows what a specific PE is computing 
+function print_PE(int j, int i);
     $display("|----------------------------------|") ;
     $display("| PE[%0d][%0d]", j, i);
-    $display("| mode: %0s", dut0.sys_array.systolic_mode[j][i]);
-    $display("| Input Act: %0d", dut0.sys_array.systolic_inputs[j][i]);
-    $display("| Input Weight: %0d", dut0.sys_array.systolic_input_weights[j][i]);
-    $display("| Input PSUM: %0d", dut0.sys_array.systolic_psums[j][i]);
+    // $display("| mode: %0b", dut0.sys_array.systolic_mode[j][i]);
+    // $display("| Input Act: %0d", dut0.sys_array.systolic_inputs[j][i]);
+    // $display("| Input Weight: %0d", dut0.sys_array.systolic_input_weights[j][i]);
+    // $display("| Input PSUM: %0d", dut0.sys_array.systolic_psums[j][i]);
     $display("| Computing... (%0d) * (%0d) + %0d",
         dut0.sys_array.systolic_inputs[j][i],
         dut0.sys_array.systolic_weights[j][i],
@@ -93,6 +103,27 @@ function print_PE(int i, int j);
     );
     $display("| Output Weight/PSUM: %0d", dut0.sys_array.systolic_outputs[j][i]);
     $display("|----------------------------------|");
+endfunction
+
+function print_weight_r();
+    $display("Systolic Array Weights (R)\n");
+    for (j = 0; j < NUM_ROWS; j += 1) begin
+        $write("[");
+        for (i = 0; i < NUM_COLS; i += 1) begin
+            $write("%2d", dut0.sys_array.systolic_weights[j][i]);
+        end
+        $write("]\n");
+    end
+endfunction
+
+// Load Weight Mem
+function load_mem(string mem, string file);
+    $display("Loading %0s Memory", mem);;
+    case (mem)
+        "I":    $readmemh(file, dut0.input_mem.mem_array);
+        "W":    $readmemh(file, dut0.weight_mem.mem_array);
+        default:$display("Invalid memory type: %0s", mem);
+    endcase
 endfunction
 
 // -------------------------------------------- //
@@ -115,7 +146,13 @@ endtask
 
 task automatic start_matmul();
     // assert start
+    @(negedge clk);
     i_start = 1'b1;
+    count_en = 1'b1;
+
+    // de-assert start
+    @(negedge clk);
+    i_start = 1'b0;
 endtask
 
 // Sanity test for weight pre-load
@@ -130,25 +167,14 @@ task automatic sanity_weight_pre_load();
     // generate_random_weights();
 
     // pre-load weights
-    // load_weights();
+    load_mem("W", "bin/weight_rom.hex");
+
+    // start preload
     start_matmul();
 
-    // // weight_r is non-blocking, if we try to sample it at the end of (posedge clk)
-    // // the LHS hasn't updated yet. Instead, sample at negedge or some fixed delay (e.g. #1)
-    // @(negedge clk);
+    repeat(NUM_ROWS + 2) @(negedge clk);
 
-    // // now check that each PE has the right weight
-    // for (j = 0; j < NUM_ROWS; j += 1) begin
-    //     for (i = 0; i < NUM_COLS; i += 1) begin
-    //         assert(weight_buffer[j][i] == dut0.systolic_weights[j][i]);
-    //     end
-    // end
-
-    // $display("Buffer Weights:");
-    // print_weights(weight_buffer);
-
-    // $display("Systolic Weights:");
-    // print_weights(dut0.systolic_weights);
+    print_weight_r();
 endtask
 
 // Sanity test for i_act forwarding
@@ -204,26 +230,23 @@ endtask
 // //  - collect outputs
 // //      - wait NUM_COLS cycles
 // //      - write result to output buffer until 
-// task automatic smoke_random_mult;
-//     // reset
-//     reset_signals();
+task automatic smoke_random_mult;
+    // reset
+    reset_signals();
 
-//     // generate random activations and weights
-//     generate_random_inputs();
-//     generate_random_weights();
+    // generate random activations and weights
+    load_mem("W", "bin/weight_rom.hex");
+    load_mem("I", "bin/input_rom.hex");
 
-//     // pre-load weights
-//     load_weights();
+    // start matmul
+    start_matmul();
+    
+    @(posedge o_done);
 
-//     // stream i_act and capture o_act
-//     run_compute();
-
-//     // verify output (for now we just print)
-//     print_inputs(input_buffer);
-//     $display("Systolic Weights:");
-//     print_weights(dut0.systolic_weights);
-//     print_outputs(output_buffer);
-// endtask
+    // verify output (for now we just dump it into output_mem.hex)
+    $writememh("bin/output_mem.hex", dut0.output_mem.mem_array);
+    
+endtask
 
 endmodule
 `default_nettype wire

@@ -108,7 +108,7 @@ module sa_matmul
         .rst_n(rst_n),
 
         // control signals
-        .i_en(),    // not connected
+        // .i_en(),    // not connected
         .i_start(i_start),
         .o_done(o_done),
 
@@ -126,6 +126,7 @@ module sa_matmul
     logic [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS];
     logic [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS];
     logic [ADD_DATAWIDTH-1 : 0] o_act     [NUM_COLS];
+    logic [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS];
     sa_compute #(
         .MUL_DATAWIDTH(MUL_DATAWIDTH),
         .ADD_DATAWIDTH(ADD_DATAWIDTH),
@@ -144,7 +145,7 @@ module sa_matmul
         // weight port
         .i_weight(i_weight),
         // input psum port        
-        .i_psum(),              // not connected
+        .i_psum(i_psum),
         // output act port
         .o_psum(o_act)
     );
@@ -153,15 +154,19 @@ module sa_matmul
     generate
         // input activation connections
         for (i = 0; i < NUM_ROWS; i += 1) begin
-            assign i_act[i] = r_input_data[((MUL_DATAWIDTH*(i+1)) - 1) -: MUL_DATAWIDTH];
+            assign i_act[i] = r_input_data[((MUL_DATAWIDTH*(NUM_ROWS - i)) - 1) -: MUL_DATAWIDTH];
         end
         // weight connections
         for (i = 0; i < NUM_COLS; i += 1) begin
-            assign i_weight[i] = r_weight_data[((MUL_DATAWIDTH*(i+1)) - 1) -: MUL_DATAWIDTH];
+            assign i_weight[i] = r_weight_data[((MUL_DATAWIDTH*(NUM_COLS - i)) - 1) -: MUL_DATAWIDTH];
         end
         // output activation connections
-        for (i = 0; i < NUM_ROWS; i += 1) begin
-            assign w_output_data[((ADD_DATAWIDTH*(i+1)) - 1) -: ADD_DATAWIDTH] = o_act[i];
+        for (i = 0; i < NUM_COLS; i += 1) begin
+            assign w_output_data[((ADD_DATAWIDTH*(NUM_COLS - i)) - 1) -: ADD_DATAWIDTH] = o_act[i];
+        end
+        // fix i_psum to 0
+        for (i = 0; i < NUM_COLS; i += 1) begin
+            assign i_psum[i] = '0;
         end
     endgenerate
 

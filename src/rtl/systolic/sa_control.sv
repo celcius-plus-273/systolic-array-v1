@@ -39,7 +39,7 @@ module sa_control
     // data config (check sa_pkg) (won't use for now)
 
     //-- control signals --//
-    input logic i_en,           // clock gating?
+    // input logic i_en,           // clock gating?
     input logic i_start,        // mult start
     output logic o_done,        // mult done
 
@@ -49,8 +49,15 @@ module sa_control
 );
     //-- localparams  & imports --//
     import sa_pkg::*;
-    localparam MAX_COUNT   = (NUM_COLS + NUM_ROWS - 1) + NUM_COLS;
+    // two extra cycles:
+    // 1 for fetching stream memory
+    // 1 for writing the last output activation
+    localparam MAX_COUNT   = (1 + NUM_COLS + NUM_ROWS - 1) + (NUM_COLS + 1);
     localparam COUNT_WIDTH = $clog2(MAX_COUNT);
+
+    localparam PRELOAD_CYCLES       = 1 + NUM_ROWS;
+    localparam STREAM_IACT_CYCLES   = 1 + NUM_COLS + NUM_ROWS - 1;
+    localparam OUTPUT_START_WRITE   = 1 + NUM_COLS;
 
     //-- state variable --//
     sa_state_e curr_state, next_state;
@@ -84,10 +91,13 @@ module sa_control
                 next_count = '0;
             end
             PRELOAD: begin
-                // we are done preloading after NUM_ROWS cycles
-                next_state = (count_r == (NUM_ROWS - 1)) ? STREAM : PRELOAD;
+                // we are done preloading after NUM_ROWS + 2 cycles 
+                // 1 cycle: fetch first memory word
+                // 4 cycles: propagate data
+                // 1 cycle: capture 
+                next_state = (count_r == (PRELOAD_CYCLES - 1)) ? STREAM : PRELOAD;
                 // increment count (reset when we are done :))
-                next_count = (count_r == (NUM_ROWS - 1)) ? '0 : count_r + 1'b1;
+                next_count = (count_r == (PRELOAD_CYCLES - 1)) ? '0 : count_r + 1'b1;
             end
             STREAM: begin
                 // keep streaming for (cols + rows - 1 + cols) cycles
@@ -139,34 +149,35 @@ module sa_control
             o_mode      <= 1'b0;
             o_load_psum <= 1'b0;
 
-            case (next_state)
+            case (curr_state)
                 IDLE: begin
-                    // set output to done?
-                    o_done = 1'b1;
                     // for the future might want to add ready signal :)
+                    o_done <= 1'b1;
                 end
                 PRELOAD: begin
                     r_weight_cenb <= 1'b0;                                                  // enable weight mem
                     r_weight_wenb <= 1'b1;                                                  // read mode
                     r_weight_addr <= r_weight_cenb ? r_weight_addr : r_weight_addr + 1'b1;  // addr
 
-                    o_mode = 1'b0; // set systolic to preload
+                    o_mode <= 1'b0; // set systolic to preload
                     o_done <= 1'b0; // actually reset o_done :)
                 end
                 STREAM: begin
                     // we enable read act inputs for COLS + ROWS - 1 cycles
-                    r_input_cenb <= (count_r <= (NUM_COLS + NUM_ROWS - 2)) ? 1'b0 : 1'b1;   // enable act mem
+                    r_input_cenb <= (count_r <= (STREAM_IACT_CYCLES - 1)) ? 1'b0 : 1'b1;     // enable act mem
                     r_input_wenb <= 1'b1;                                                   // read mode
                     r_input_addr <= r_input_cenb ? r_input_addr : r_input_addr + 1'b1;      // addr
 
                     // next we enable write output acts for remaining cycles
                     // note that there is one cycle of overlap!
-                    w_output_cenb <= (count_r >= (NUM_COLS + NUM_ROWS - 2)) ? 1'b0 : 1'b1;  // enable output mem
+                    w_output_cenb <= (count_r >= (OUTPUT_START_WRITE)) ? 1'b0 : 1'b1;       // enable output mem
                     w_output_wenb <= 1'b0;                                                  // write mode
                     w_output_addr <= w_output_cenb ? w_output_addr : w_output_addr + 1'b1;  // addr
 
-                    o_mode = 1'b1;      // set systolic to compute mode
-                    o_load_psum = 1'b1; // we need to clear the i_weight port or just swtich it to psum (will be tied to 0)
+                    // $monitor("CENB=%0b, WENB=%0b, W_ADDR=%0x", w_output_cenb, w_output_wenb, w_output_addr);
+
+                    o_mode      <= 1'b1; // set systolic to compute mode
+                    o_load_psum <= 1'b1; // we need to clear the i_weight port or just swtich it to psum (will be tied to 0)
                 end
                 default: begin
                     // for debug purposes

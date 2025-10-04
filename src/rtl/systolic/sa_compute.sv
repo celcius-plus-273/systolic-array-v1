@@ -39,13 +39,13 @@ module sa_compute
     // Dimensions: (NUM_ROWS)x(NUM_COLS+1)
     // Note: NUM_COLS + 1 is needed for the output of the right-most PEs
     //       which gets connected to an o_act signal used with DEBUG ifdef
-    logic [MUL_DATAWIDTH-1 : 0] row_inter [NUM_ROWS][NUM_COLS+1]; // row_inter[j][i]
+    wire [MUL_DATAWIDTH-1 : 0] row_inter [NUM_ROWS][NUM_COLS+1]; // row_inter[j][i]
 
     // Column-wise (vertical) interconnection
     // Dimensions: (NUM_ROWS+1)x(NUM_COLS)
     // Note: NUM_ROWS + 1 is needed for the output of the bottom-most PEs
     //       which is connected to o_psum
-    logic [ADD_DATAWIDTH-1 : 0] col_inter [NUM_ROWS+1][NUM_COLS]; // column_inter[j][i]
+    wire [ADD_DATAWIDTH-1 : 0] col_inter [NUM_ROWS+1][NUM_COLS]; // column_inter[j][i]
 
     // ---------------------------------------- //
     // ------ PE Array Generate For-Loop ------ //

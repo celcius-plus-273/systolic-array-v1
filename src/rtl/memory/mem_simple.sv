@@ -28,12 +28,15 @@ module mem_simple
     logic [DATA_WIDTH-1 : 0] mem_array [NUM_ENTRIES];
 
     // ff read and write logic
-    always_ff @( posedge clk or negedge rst_n ) begin : read_write_ff
+    always @( posedge clk or negedge rst_n ) begin : read_write_ff
         // reset memory
         if (!rst_n) begin
+            // reset mem array
             for (i = 0; i < NUM_ENTRIES; i += 1) begin
                 mem_array[i] <= '0;
             end
+            // reset output ff
+            o_data <= '0;
         end
         // normal behavior
         else begin
