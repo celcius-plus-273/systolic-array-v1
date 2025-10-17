@@ -23,7 +23,7 @@ def to_bin(file, A, rows, cols, format='h'):
     # write memory to output format [bin/hex]
     f = open(file, 'w')
     for i in range(rows):
-        for j in range(cols):
+        for j in range(cols-1, -1, -1):
             assert (A[i][j] <= 127 and A[i][j] >= -128) # saturate 8 bits
             val = to_twos_comp(A[i][j])
             f.write(f'{val}')

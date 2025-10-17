@@ -154,15 +154,15 @@ module sa_matmul
     generate
         // input activation connections
         for (i = 0; i < NUM_ROWS; i += 1) begin
-            assign i_act[i] = r_input_data[((MUL_DATAWIDTH*(NUM_ROWS - i)) - 1) -: MUL_DATAWIDTH];
+            assign i_act[(NUM_ROWS-1) - i] = r_input_data[((MUL_DATAWIDTH*(NUM_ROWS - i)) - 1) -: MUL_DATAWIDTH];
         end
         // weight connections
         for (i = 0; i < NUM_COLS; i += 1) begin
-            assign i_weight[i] = r_weight_data[((MUL_DATAWIDTH*(NUM_COLS - i)) - 1) -: MUL_DATAWIDTH];
+            assign i_weight[(NUM_COLS - 1) - i] = r_weight_data[((MUL_DATAWIDTH*(NUM_COLS - i)) - 1) -: MUL_DATAWIDTH];
         end
         // output activation connections
         for (i = 0; i < NUM_COLS; i += 1) begin
-            assign w_output_data[((ADD_DATAWIDTH*(NUM_COLS - i)) - 1) -: ADD_DATAWIDTH] = o_act[i];
+            assign w_output_data[((ADD_DATAWIDTH*(NUM_COLS - i)) - 1) -: ADD_DATAWIDTH] = o_act[(NUM_COLS - 1) - i];
         end
         // fix i_psum to 0
         for (i = 0; i < NUM_COLS; i += 1) begin

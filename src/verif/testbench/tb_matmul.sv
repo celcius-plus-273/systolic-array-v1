@@ -5,9 +5,9 @@ localparam RANGE        = 8;    // range for random values
 
 // Matrix dimensions
 //  (M,K) * (K,N) = (M,N)
-localparam M            = 4; // streaming dimension (larger is better)
-localparam K            = 4; // systolic height (num rows)
-localparam N            = 4; // systolic width (num cols)
+localparam M            = 3; // streaming dimension (larger is better)
+localparam K            = 3; // systolic height (num rows)
+localparam N            = 3; // systolic width (num cols)
 
 // Design parameters
 localparam ADD_DATAWIDTH    = 8;
@@ -69,19 +69,19 @@ always @(posedge clk) begin
 end
 
 // Monitor FSM of design :)
-always @(negedge clk) begin
-    $display("========== CYCLE: %0d ===========", cycle);
-    $display("STATE = %0s", dut0.sys_array_ctrl.curr_state);
-    $display("COUNT_R = %0d", dut0.sys_array_ctrl.count_r);
+// always @(negedge clk) begin
+//     $display("========== CYCLE: %0d ===========", cycle);
+//     $display("STATE = %0s", dut0.sys_array_ctrl.curr_state);
+//     $display("COUNT_R = %0d", dut0.sys_array_ctrl.count_r);
 
-    print_PE(0, 0);
-    print_PE(1, 0);
-    print_PE(2, 0);
-    print_PE(3, 0);
-    print_PE(3, 1);
-    print_PE(3, 2);
-    print_PE(3, 3);
-end
+//     print_PE(0, 0);
+//     print_PE(1, 0);
+//     print_PE(2, 0);
+//     print_PE(3, 0);
+//     print_PE(3, 1);
+//     print_PE(3, 2);
+//     print_PE(3, 3);
+// end
 
 // ------------------------------------------------ //
 //--------- General Systolic Functions ------------ //
