@@ -91,10 +91,7 @@ module sa_control
                 next_count = '0;
             end
             PRELOAD: begin
-                // we are done preloading after NUM_ROWS + 2 cycles 
-                // 1 cycle: fetch first memory word
-                // 4 cycles: propagate data
-                // 1 cycle: capture 
+                // preload cycles
                 next_state = (count_r == (PRELOAD_CYCLES - 1)) ? STREAM : PRELOAD;
                 // increment count (reset when we are done :))
                 next_count = (count_r == (PRELOAD_CYCLES - 1)) ? '0 : count_r + 1'b1;
@@ -174,7 +171,6 @@ module sa_control
                     w_output_wenb <= 1'b0;                                                  // write mode
                     w_output_addr <= w_output_cenb ? w_output_addr : w_output_addr + 1'b1;  // addr
 
-                    // $monitor("CENB=%0b, WENB=%0b, W_ADDR=%0x", w_output_cenb, w_output_wenb, w_output_addr);
 
                     o_mode      <= 1'b1; // set systolic to compute mode
                     o_load_psum <= 1'b1; // we need to clear the i_weight port or just swtich it to psum (will be tied to 0)

@@ -10,10 +10,17 @@ TB_FOLDER=$(SRC_VERIF)/testbench
 DEBUG=1
 VCS=1
 
+# Data vars
+M=3
+K=3
+N=3
+LOW=-16
+HIGH=16
+VERBOSE=1
+
 PYTHON=python3.8
 
 #Build up a list of verilog define statements to be used by vcs
-
 VERILOG_DEFINES:= 
 ifeq ($(DEBUG), 1)
 		VERILOG_DEFINES := $(VERILOG_DEFINES)+DEBUG=1
@@ -34,10 +41,10 @@ link_src:
 mem:
 	rm -rf bin
 	mkdir bin
-	$(PYTHON) scripts/mem_matrix_bin.py
+	$(PYTHON) scripts/data_gen.py -d $(M) $(K) $(N) -b $(LOW) $(HIGH) -v
 
 verif:
-	$(PYTHON) scripts/compare.py
+	$(PYTHON) scripts/verify.py -d $(M) $(K) $(N) -v
 
 # A new option has been added here. Take a closer look at -cm. Look it up!
 vcs:$(TESTBENCH).include
@@ -48,8 +55,10 @@ vcs:$(TESTBENCH).include
 		-lca -kdb
 		# simv 
 
+run: mem vcs verif
+
 wipe: clean
-	rm -rf $(TESTBENCH).include
+	rm -rf *.include
 	rm -rf alib-52
 	rm -rf simv.daidir
 	rm -rf DVEfiles

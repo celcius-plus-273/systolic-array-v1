@@ -22,14 +22,14 @@ module sa_compute
 
     // inputs
     // i_act buffer & weight buffer
-    input logic signed [MUL_DATAWIDTH-1 : 0] i_act     [NUM_ROWS],
-    input logic signed [MUL_DATAWIDTH-1 : 0] i_weight  [NUM_COLS],
+    input logic signed [NUM_ROWS-1:0][MUL_DATAWIDTH-1 : 0] i_act,
+    input logic signed [NUM_COLS-1:0][MUL_DATAWIDTH-1 : 0] i_weight,
 
     // intermediate partial sums buffer
-    input logic signed [ADD_DATAWIDTH-1 : 0] i_psum    [NUM_COLS],
+    input logic signed [NUM_COLS-1:0][ADD_DATAWIDTH-1 : 0] i_psum,
 
     // output partial sums buffer
-    output logic signed [ADD_DATAWIDTH-1 : 0] o_psum   [NUM_COLS]
+    output logic signed [NUM_COLS-1:0][ADD_DATAWIDTH-1 : 0] o_psum
 );
 
     // --------------------------------------- //

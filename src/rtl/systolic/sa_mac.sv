@@ -19,9 +19,9 @@ module sa_mac_simple
     // 8 bit example
     //  MAX_MULT = (2 ** 7) - 1 = 127
     //  MIN_MULT = -1 * (2 ** 7) = -128
-    localparam MAX_MULT = 2 ** (MUL_DATAWIDTH - 1) - 1;
+    localparam MAX_MULT = (2 ** (MUL_DATAWIDTH - 1)) - 1;
     localparam MIN_MULT = -1 * (2 ** (MUL_DATAWIDTH - 1));    
-    localparam MAX_ADD = 2 ** (ADD_DATAWIDTH - 1) - 1;
+    localparam MAX_ADD = (2 ** (ADD_DATAWIDTH - 1)) - 1;
     localparam MIN_ADD = -1 * (2 ** (ADD_DATAWIDTH - 1));
 
     // -- internal wires -- //
@@ -44,15 +44,18 @@ module sa_mac_simple
             mult_result_sat = mult_result;
 
         // add
-        add_result = mult_result + i_psum;
+        add_result = mult_result_sat + i_psum;
 
         // saturate
-        if (add_result > MAX_ADD) 
+        if (add_result > MAX_ADD) begin
             add_result_sat = MAX_ADD;
-        else if (add_result < MIN_ADD)
+        end
+        else if (add_result < MIN_ADD) begin
             add_result_sat = MIN_ADD;
-        else
+        end
+        else begin
             add_result_sat = add_result;
+        end
     end
 
     assign o_psum = add_result_sat;

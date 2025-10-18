@@ -1,10 +1,12 @@
 import numpy as np
-import sys
 
 def to_twos_comp(val, bytes=1):
-    val_str = int(val).to_bytes(bytes, 'big', signed=True)
-
-    return val_str.hex()
+    try:
+        val_str = int(val).to_bytes(bytes, 'big', signed=True)
+        return val_str.hex()
+    except:
+        val_str = int(val & 0xFF).to_bytes(bytes+1, 'big', signed=True)
+        return val_str.hex()[0:bytes]
 
 def from_twos_comp(val, bytes=1, format='h'):
     if format == 'b':
@@ -23,8 +25,8 @@ def to_bin(file, A, rows, cols, format='h'):
     # write memory to output format [bin/hex]
     f = open(file, 'w')
     for i in range(rows):
-        for j in range(cols-1, -1, -1):
-            assert (A[i][j] <= 127 and A[i][j] >= -128) # saturate 8 bits
+        for j in range(cols):
+            # assert (A[i][j] <= 127 and A[i][j] >= -128) # saturate 8 bits
             val = to_twos_comp(A[i][j])
             f.write(f'{val}')
         f.write('\n')
@@ -62,57 +64,46 @@ def matrix_to_stagger(A):
     
     return B
 
+def vertical_flip(A):
+    # A must be a 2D array
+    assert A.ndim == 2
+    return np.flip(A, 0)
+
+def horizontal_flip(A):
+    # A must be a 2D array
+    assert A.ndim == 2
+    return np.flip(A, 1)
+
+def random_matrix(range, dim):
+    return np.random.randint(range[0], range[1], dim)
+
 def read_output_mem(file, rows, cols):
     B = np.zeros((rows + cols - 1, cols), dtype=int)
     f = open(file, 'r')
     lines = f.readlines()
     for i in range(rows + cols - 1):
-        assert len(line) == 8
+        line = lines[i]
         # each line has #cols * 8 bits
         for j in range(cols):
-            entry = line[j, j+1]
-            B[i][j] = int(entry)
+            start = 2*j
+            entry = line[start:start+2]
+            if entry == 'xx':
+                entry = '00'
+            B[i][j] = from_twos_comp(entry)
 
-    return B
+    return stagger_to_matrix(horizontal_flip(B), rows, cols)
 
-def horizontal_flip(A):
-    # A must be a 2D array
-    assert A.ndim == 2
-
-    # extract the two dimensions
-    rows, cols = A.shape
-
+def read_golden(file, rows, cols):
     B = np.zeros((rows, cols), dtype=int)
-    for i in range(rows-1, -1, -1):
-        B[(rows - 1) - i] = A[i]
+    f = open(file, 'r')
+    lines = f.readlines()
+    for i in range(rows):
+        line = lines[i]
+        # each line has #cols * 8 bits
+        for j in range(cols):
+            start = 2*j
+            end = (2*j) + 1
+            entry = line[start:end+1]
+            B[i][j] = from_twos_comp(entry)
 
     return B
-
-def random_matrix(range, dim):
-    return np.random.randint(range[0], range[1], dim)
-
-def overflow_matmul(A, B):
-    pass
-
-def main():
-    K = 4
-    M = 4
-    N = 4
-
-    # need to generate 4x4 weight matrix and 4x4 input matrix (with staggering)
-    low = -8
-    high = 8
-    weight_matrix = random_matrix((low, high), (K, N))
-    input_matrix = random_matrix((low, high), (M, K))
-    stag_input_matrix = matrix_to_stagger(input_matrix)
-
-    output_matrix = np.matmul(input_matrix, weight_matrix)
-
-    to_bin('bin/weight_rom.hex', horizontal_flip(weight_matrix), K, N)
-    to_bin('bin/input_rom.hex', stag_input_matrix, M + K -1, K)
-
-    to_bin('bin/output_golden.hex', output_matrix, M, N)
-
-
-if __name__ == '__main__':
-    main()

@@ -17,9 +17,9 @@ module mem_simple
     input logic i_wenb,         // write enable (active low)
 
     // Single Port memory
-    input  logic [ADDR_WIDTH-1 : 0] i_addr,
-    input  logic [DATA_WIDTH-1  : 0] i_data,
-    output logic [DATA_WIDTH-1  : 0] o_data
+    input  logic [ADDR_WIDTH-1 : 0]     i_addr,
+    input  logic [DATA_WIDTH-1  : 0]    i_data,
+    output logic [DATA_WIDTH-1  : 0]    o_data
 );
     // localparams and variables
     integer i;

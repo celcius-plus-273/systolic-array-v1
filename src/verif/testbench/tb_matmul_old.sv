@@ -5,115 +5,33 @@ localparam RANGE        = 8;    // range for random values
 
 // Matrix dimensions
 //  (M,K) * (K,N) = (M,N)
-localparam M = 3; // streaming dimension (larger is better)
-localparam K = 3; // systolic height (num rows)
-localparam N = 3; // systolic width (num cols)
+localparam M            = 3; // streaming dimension (larger is better)
+localparam K            = 3; // systolic height (num rows)
+localparam N            = 3; // systolic width (num cols)
 
 // Design parameters
-localparam WIDTH    = 8;
-localparam ROW      = K;    // for now we will make it match to MatMul
-localparam COL      = N;
-
-// Memory parameters
-localparam I_SIZE = 5;
-localparam W_SIZE = 3;
-localparam O_SIZE = 5;
+localparam ADD_DATAWIDTH    = 8;
+localparam MUL_DATAWIDTH    = 8;
+localparam NUM_ROWS         = K;    // for now we will make it match to MatMul
+localparam NUM_COLS         = N;
 
 // Global signals
-bit clk_i;
-bit rstn_i;
+bit clk;
+bit rst_n;
 
 // clkgen
-always #(CLK_PERIOD/2) clk_i=~clk_i;
+always #(CLK_PERIOD/2) clk=~clk;
 
-//------------------//
-//-- Input Memory --//
-//------------------//
-logic                         ib_mem_cenb_o;
-logic                         ib_mem_wenb_o;
-logic [$clog2(I_SIZE)-1:0]    ib_mem_addr_o;
-logic [ROW-1:0][WIDTH-1:0]    ib_mem_data_i;
-mem_emulator #(
-    .WIDTH(ROW*WIDTH),
-    .SIZE(I_SIZE)
-) input_mem (
-    .clk_i(clk_i),
-    // cenb & wenb
-    .cenb_i(ib_mem_cenb_o),
-    .wenb_i(ib_mem_wenb_o),
-    // addr & data
-    .addr_i(ib_mem_addr_o),     // addr port
-    .d_i(),                     // not connected
-    .q_o(ib_mem_data_i)         // data port
-);
-    
-//-------------------//
-//-- Weight Memory --//
-//-------------------//
-logic                         wb_mem_cenb_o;
-logic                         wb_mem_wenb_o;
-logic [$clog2(W_SIZE)-1:0]    wb_mem_addr_o;
-logic [COL-1:0][WIDTH-1:0]    wb_mem_data_i;
-mem_emulator #(
-    .WIDTH(ROW*WIDTH),
-    .SIZE(I_SIZE)
-) weight_mem (
-    .clk_i(clk_i),
-    // cenb & wenb
-    .cenb_i(wb_mem_cenb_o),
-    .wenb_i(wb_mem_wenb_o),
-    // addr & data
-    .addr_i(wb_mem_addr_o),     // addr port
-    .d_i(),                     // not connected
-    .q_o(wb_mem_data_i)         // data port
-);
-    
-//-------------------//
-//-- Output Memory --//
-//-------------------//
-logic                         ob_mem_cenb_o;
-logic                         ob_mem_wenb_o;
-logic [$clog2(O_SIZE)-1:0]    ob_mem_addr_o;
-logic [COL-1:0][WIDTH-1:0]    ob_mem_data_i;
-logic [COL-1:0][WIDTH-1:0]    ob_mem_data_o;
-mem_emulator #(
-    .WIDTH(ROW*WIDTH),
-    .SIZE(I_SIZE)
-) output_mem (
-    .clk_i(clk_i),
-    // cenb & wenb
-    .cenb_i(ob_mem_cenb_o),
-    .wenb_i(ob_mem_wenb_o),
-    // addr & data
-    .addr_i(ob_mem_addr_o),     // addr port
-    .d_i(ob_mem_data_o),        // data write port
-    .q_o(ob_mem_data_i)         // not used
-);
-    
-//-----------------//
-//-- Psum Memory --//
-//-----------------//
-logic                         ps_mem_cenb_o;
-logic                         ps_mem_wenb_o;
-logic [$clog2(W_SIZE)-1:0]    ps_mem_addr_o;
-logic [COL-1:0][WIDTH-1:0]    ps_mem_data_o;
-logic [COL-1:0][WIDTH-1:0]    ps_mem_data_i;
-
-//-----------------//
-//---- MAT MUL ----//
-//-----------------//
 // DUT signals
-logic start_i;
-logic done_o;
+logic i_start;
+logic o_done;
 
 // DUT Instance
 sa_matmul #(
-    .WIDTH(WIDTH),
-    .ROW(ROW),
-    .COL(COL),
-    .W_SIZE(W_SIZE),
-    .I_SIZE(I_SIZE),
-    .O_SIZE(O_SIZE)
+    .ADD_DATAWIDTH(ADD_DATAWIDTH),
+    .MUL_DATAWIDTH(MUL_DATAWIDTH),
+    .NUM_ROWS(NUM_ROWS),
+    .NUM_COLS(NUM_COLS)
 ) dut0 (.*);
 
 // Test variables
@@ -146,7 +64,7 @@ initial begin
     $finish;
 end
 
-always @(posedge clk_i) begin
+always @(posedge clk) begin
     if (count_en) cycle += 1;
 end
 
@@ -189,9 +107,9 @@ endfunction
 
 function print_weight_r();
     $display("Systolic Array Weights (R)\n");
-    for (j = 0; j < ROW; j += 1) begin
+    for (j = 0; j < NUM_ROWS; j += 1) begin
         $write("[");
-        for (i = 0; i < COL; i += 1) begin
+        for (i = 0; i < NUM_COLS; i += 1) begin
             $write("%2d", dut0.sys_array.systolic_weights[j][i]);
         end
         $write("]\n");
@@ -202,8 +120,8 @@ endfunction
 function load_mem(string mem, string file);
     $display("Loading %0s Memory", mem);;
     case (mem)
-        "I":    $readmemh(file, input_mem.data);
-        "W":    $readmemh(file, weight_mem.data);
+        "I":    $readmemh(file, dut0.input_mem.mem_array);
+        "W":    $readmemh(file, dut0.weight_mem.mem_array);
         default:$display("Invalid memory type: %0s", mem);
     endcase
 endfunction
@@ -214,27 +132,27 @@ endfunction
 // reset signals / init signals
 task automatic reset_signals();
     // toggle reset
-    rstn_i = 1'b0;
+    rst_n = 1'b0;
 
     // reset control signals
-    start_i = 1'b0;
+    i_start = 1'b0;
 
     // wait two cycles
-    repeat(2) @(posedge clk_i);
+    repeat(2) @(posedge clk);
 
     // de-assert reset
-    rstn_i = 1'b1;
+    rst_n = 1'b1;
 endtask
 
 task automatic start_matmul();
     // assert start
-    @(negedge clk_i);
-    start_i = 1'b1;
+    @(negedge clk);
+    i_start = 1'b1;
     count_en = 1'b1;
 
     // de-assert start
-    @(negedge clk_i);
-    start_i = 1'b0;
+    @(negedge clk);
+    i_start = 1'b0;
 endtask
 
 // Sanity test for weight pre-load
@@ -254,7 +172,7 @@ task automatic sanity_weight_pre_load();
     // start preload
     start_matmul();
 
-    repeat(ROW + 2) @(negedge clk_i);
+    repeat(NUM_ROWS + 2) @(negedge clk);
 
     print_weight_r();
 endtask
@@ -276,10 +194,10 @@ task automatic smoke_random_mult;
     start_matmul();
     
     // results are ready
-    @(posedge done_o);
+    @(posedge o_done);
 
     // verify output (for now we just dump it into output_mem.hex)
-    $writememh("bin/output_mem.hex", output_mem.data);
+    $writememh("bin/output_mem.hex", dut0.output_mem.mem_array);
 endtask
 
 endmodule
