@@ -1,6 +1,5 @@
 TESTBENCH=tb_matmul
-
-TESTNAME=default
+TESTNAME=default # not really using this rn
 
 SRC_VERILOG=../../src/rtl
 SRC_VERIF=../../src/verif
@@ -10,7 +9,7 @@ TB_FOLDER=$(SRC_VERIF)/testbench
 DEBUG=1
 VCS=1
 
-# Data vars
+# Test vars
 M=3
 K=3
 N=3

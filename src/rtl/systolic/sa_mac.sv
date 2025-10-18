@@ -30,7 +30,7 @@ module sa_mac_simple
     logic signed [(ADD_DATAWIDTH-1) + 1 : 0] add_result;
     logic signed [ADD_DATAWIDTH-1       : 0] add_result_sat;
 
-    // BASIC FULLY COMBINATIONAL MAC
+    // MAC Combinational Logic
     always_comb begin : saturation_mac
         // multiply
         mult_result = i_act * i_weight;
@@ -58,12 +58,9 @@ module sa_mac_simple
         end
     end
 
+    // assign output
     assign o_psum = add_result_sat;
 
-    // TODO: Handle multiplication and addition overflow
-    //    - one idea is to detect overflow by doing a reduction OR
-    //      operation
-    //    - output mux to select from '1 and psum_result
-    //
+    // TODO: Efficient overflow and underflow
 
 endmodule
