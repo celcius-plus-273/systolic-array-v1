@@ -1,6 +1,7 @@
 import numpy as np
 import click as ck
 import sys
+import os
 
 from util import *
 from pathlib import Path
@@ -24,8 +25,10 @@ def overflow_matmul(A, B, M, N, K):
             for k in range(K):
                 act = A[m][k]
                 weight = B[k][n]
-                prod = np.clip(act * weight, -128, 127)
-                psum = np.clip(psum + prod, -128, 127)
+                # prod = np.clip(act * weight, -128, 127)
+                # psum = np.clip(psum + prod, -128, 127)
+                prod = act * weight
+                psum = np.clip(prod + psum, -128, 127)
                 f.write(f'k index = {k}\n')
                 f.write(f'{act} * {weight} = {prod}\n')
                 f.write(f'acc_psum = {psum}\n')
@@ -39,36 +42,48 @@ def overflow_matmul(A, B, M, N, K):
 @ck.option('-d', '--dim', type=(int, int, int), help='Matrix Array Dimensions: (M,K) * (K,N) = (M,N)')
 @ck.option('-b', '--bound', type=(int, int), help='Lower and upper bounds for matrix values')
 @ck.option('-p', '--path', type=str, default='bin', help='Path to output directory. E.g. path/to/bin')
+@ck.option('-n', '--numtests', type=int, default=1, help='Number of tests')
 @ck.option('-v', '--verbose', is_flag=True)
-def main(dim, bound, path, verbose):
+def main(dim, bound, path, numtests, verbose):
     # args
     M, N, K = dim
 
     # need to generate 4x4 weight matrix and 4x4 input matrix (with staggering)
     low, high = bound
-    weight_matrix = random_matrix((low, high), (K, N))
-    input_matrix = random_matrix((low, high), (M, K))
-    stag_input_matrix = matrix_to_stagger(input_matrix)
 
-    # output_matrix = np.matmul(input_matrix, weight_matrix)
-    output_matrix = overflow_matmul(input_matrix, weight_matrix, M, N, K)
+    # loop :)
+    for i in range(numtests):
+        weight_matrix = random_matrix((low, high), (K, N))
+        input_matrix = random_matrix((low, high), (M, K))
+        stag_input_matrix = matrix_to_stagger(input_matrix)
 
-    # output paths
-    dir_path = Path(path)
-    golden_path = dir_path / 'output_golden.hex'
-    input_path = dir_path / 'input_rom.hex'
-    weight_path = dir_path / 'weight_rom.hex'
+        # output_matrix = np.matmul(input_matrix, weight_matrix)
+        output_matrix = overflow_matmul(input_matrix, weight_matrix, M, N, K)
 
-    to_bin(str(weight_path), vertical_flip(weight_matrix), K, N)
-    to_bin(str(input_path), horizontal_flip(stag_input_matrix), M + K -1, K)
-    to_bin(str(golden_path), horizontal_flip(output_matrix), M, N)
+        # output paths
+        common_path = Path(path) / 'random'
+        if not common_path.exists():
+            os.mkdir(common_path)
 
-    # verbose print
-    if verbose:
-        ck.echo('------ Input Act ------')
-        ck.echo(input_matrix)
-        ck.echo('------ Weights ------')
-        ck.echo(weight_matrix)
+        dir_path = Path(common_path) / f'test_{i}'
+
+        if not dir_path.exists():
+            os.mkdir(dir_path)
+
+        golden_path = dir_path / 'output_golden.hex'
+        input_path = dir_path / 'input_rom.hex'
+        weight_path = dir_path / 'weight_rom.hex'
+
+        to_bin(str(weight_path), vertical_flip(weight_matrix), K, N)
+        to_bin(str(input_path), horizontal_flip(stag_input_matrix), M + K -1, K)
+        to_bin(str(golden_path), horizontal_flip(output_matrix), M, N)
+
+        # verbose print
+        if verbose:
+            ck.echo('------ Input Act ------')
+            ck.echo(input_matrix)
+            ck.echo('------ Weights ------')
+            ck.echo(weight_matrix)
 
 if __name__ == '__main__':
     main()

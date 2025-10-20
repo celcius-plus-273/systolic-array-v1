@@ -15,7 +15,7 @@ module sa_matmul
     input  logic                          clk_i,            // clock signal
     input  logic                          rstn_i,           // active low reset signal
     input  logic                          start_i,          // active high start calculation, must reset back to 0 first to start a new calculation
-    // input  data_config_struct             data_config_i,    // test controls
+    input  data_config_struct             data_config_i,    // test controls
     // output buffer memory
     output  logic                         ob_mem_cenb_o,    // memory enable, active low
     output  logic                         ob_mem_wenb_o,    // write enable, active low
@@ -39,10 +39,10 @@ module sa_matmul
     output  logic [COL-1:0][WIDTH-1:0]    ps_mem_data_o,    // input data
     input   logic [COL-1:0][WIDTH-1:0]    ps_mem_data_i,    // output data
     // external mode
-    // input  logic                          ext_en_i,         // external mode enable, acitve high
-    // input  external_inputs_struct         ext_inputs_i,     // external inputs
-    // output logic [COL-1:0][WIDTH-1:0]     ext_result_o,     // external outputs
-    // output logic                          ext_valid_o,      // external valid
+    input  logic                          ext_en_i,         // external mode enable, acitve high
+    input  external_inputs_struct         ext_inputs_i,     // external inputs
+    output logic [COL-1:0][WIDTH-1:0]     ext_result_o,     // external outputs
+    output logic                          ext_valid_o,      // external valid
     // output done
     output logic                          done_o            // data controls
 );

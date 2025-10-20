@@ -1,10 +1,13 @@
 TESTBENCH=tb_matmul
-TESTNAME=default # not really using this rn
+# TESTNAME=single
+TESTNAME=multi
+NUM_TESTS=100
 
 SRC_VERILOG=../../src/rtl
 SRC_VERIF=../../src/verif
 RTL_FOLDER=$(SRC_VERILOG)
 TB_FOLDER=$(SRC_VERIF)/testbench
+SYNOPSYS=/tools/software/synopsys
 
 DEBUG=1
 VCS=1
@@ -40,19 +43,21 @@ link_src:
 mem:
 	rm -rf bin
 	mkdir bin
-	$(PYTHON) scripts/data_gen.py -d $(M) $(K) $(N) -b $(LOW) $(HIGH) -v
+	$(PYTHON) scripts/data_gen.py -d $(M) $(K) $(N) -b $(LOW) $(HIGH) -n $(NUM_TESTS)
 
 verif:
-	$(PYTHON) scripts/verify.py -d $(M) $(K) $(N) -v
+	$(PYTHON) scripts/verify.py -d $(M) $(K) $(N) -n $(NUM_TESTS)
 
 # A new option has been added here. Take a closer look at -cm. Look it up!
 vcs:$(TESTBENCH).include
-	vcs -f $(TESTBENCH).include +v2k -R +lint=all -sverilog -full64 \
+	vcs -f $(TESTBENCH).include +v2k -R -sverilog -full64 \
 		-timescale=1ns/10ps -debug_access+all -debug_region+cell+encrypt \
-		-debug_access -l $(TESTBENCH).log +define+$(VERILOG_DEFINES) +testname=$(TESTNAME) \
+		-debug_access -l $(TESTBENCH).log +define+$(VERILOG_DEFINES) \
+		+testname=$(TESTNAME) +numtests=$(NUM_TESTS) \
+		+incdir+$(SYNOPSYS)/syn/latest/dw/sim_ver \
 		-cm fsm+line+assert \
-		-lca -kdb
-		# simv 
+		-lca -kdb \
+		+lint=all
 
 run: mem vcs verif
 
@@ -73,7 +78,6 @@ wipe: clean
 	rm -rf verdiLog
 	rm -rf *.fsdb
 	rm -rf rtl
-	rm -rf bin
 	rm -rf scripts
 	rm -rf testbench
 

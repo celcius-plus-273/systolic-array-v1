@@ -119,9 +119,19 @@ sa_matmul #(
 // Test variables
 int cycle = 0;
 bit count_en;
+int returnval;
+string testname;
+integer num_tests;
+string dumpfile = "matmul";
+string file_path; // used in iterative tests
 
 initial begin
-    string dumpfile = "matmul";
+    returnval = $value$plusargs("testname=%s", testname);
+    returnval = $value$plusargs("numtests=%d", num_tests);
+
+    $display("---- Running Test: %0s ----", testname);
+    $display("Number of Tests: %0d", num_tests);
+
     `ifdef VCS
         // FSDB Dump (Waveform)
         $fsdbDumpfile({dumpfile,".fsdb"});
@@ -137,10 +147,8 @@ initial begin
     // reset signals
     reset_signals();
 
-    // run sanity tests
-    // sanity_weight_pre_load();
-
-    smoke_random_mult();
+    // run test case
+    run_rand_mult(num_tests);
 
     // exit sim
     $finish;
@@ -200,11 +208,11 @@ endfunction
 
 // Load Weight Mem
 function load_mem(string mem, string file);
-    $display("Loading %0s Memory", mem);;
+    // $display("Loading %0s Memory", mem);
     case (mem)
-        "I":    $readmemh(file, input_mem.data);
-        "W":    $readmemh(file, weight_mem.data);
-        default:$display("Invalid memory type: %0s", mem);
+        "I":        $readmemh(file, input_mem.data);
+        "W":        $readmemh(file, weight_mem.data);
+        default:    $display("Invalid memory type: %0s", mem);
     endcase
 endfunction
 
@@ -280,6 +288,33 @@ task automatic smoke_random_mult;
 
     // verify output (for now we just dump it into output_mem.hex)
     $writememh("bin/output_mem.hex", output_mem.data);
+endtask
+
+task automatic run_rand_mult (int num_tests);
+    for (int i = 0; i < num_tests; i += 1) begin
+
+        // binary path
+        file_path = $sformatf("bin/random/test_%0d/", i);
+
+        $display("Running test: %0d", i);
+        $display("Binary path: %0s", file_path);
+
+        // reset module
+        reset_signals();
+
+        // generate random activations and weights
+        load_mem("W", {file_path, "weight_rom.hex"});
+        load_mem("I", {file_path, "input_rom.hex"});
+
+        // start matmul
+        start_matmul();
+    
+        // results are ready
+        @(posedge done_o);
+
+        // dump dut output
+        $writememh({file_path, "output_mem.hex"}, output_mem.data);
+    end
 endtask
 
 endmodule

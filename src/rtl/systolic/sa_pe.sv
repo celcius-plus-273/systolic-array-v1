@@ -66,7 +66,7 @@ module sa_pe
     // MAC instance
     //    for now only instantiate one MAC/PE
     //    this ratio can ba adjusted based on implementation
-    sa_mac_simple #(
+    sa_mac_dw #(
         .ADD_DATAWIDTH(ADD_DATAWIDTH),
         .MUL_DATAWIDTH(MUL_DATAWIDTH)
     ) sa_mac_0 (

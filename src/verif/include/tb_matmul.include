@@ -1,3 +1,4 @@
+/tools/software/synopsys/syn/latest/dw/sim_ver/DW02_mac.v
 ./rtl/systolic/sa_mac.sv
 ./rtl/systolic/sa_pe.sv
 ./rtl/systolic/sa_compute.sv
