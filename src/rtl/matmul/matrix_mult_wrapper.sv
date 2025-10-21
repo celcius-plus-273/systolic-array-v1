@@ -1,10 +1,10 @@
-module matrix_mult_wrapper_<GROUP_NUMBER> #(
+module matrix_mult_wrapper #(
     parameter WIDTH         = 8, 
     parameter ROW           = 4, 
     parameter COL           = 4, 
-    parameter W_SIZE        = 256, 
-    parameter I_SIZE        = 256, 
-    parameter O_SIZE        = 256,
+    parameter W_SIZE        = 512, 
+    parameter I_SIZE        = 512, 
+    parameter O_SIZE        = 512,
     parameter MEM_R_WIDTH   = WIDTH * ROW ,
     parameter MEM_C_WIDTH   = WIDTH * COL ,
     parameter DRIVER_WIDTH  = WIDTH * ( ROW + COL )
@@ -30,7 +30,7 @@ module matrix_mult_wrapper_<GROUP_NUMBER> #(
   output  logic                       wb_mem_cenb_o,   // memory enable, active low
   output  logic                       wb_mem_wenb_o,   // write enable, active low
   output  logic [$clog2(W_SIZE)-1:0]  wb_mem_addr_o,   // address
-  input   logic [MEM_C_WIDTH-1:0]      wb_mem_data_i,   // input data
+  input   logic [MEM_C_WIDTH-1:0]     wb_mem_data_i,   // input data
   // partial sum buffer memory
   output  logic                       ps_mem_cenb_o,   // memory enable, active low
   output  logic                       ps_mem_wenb_o,   // write enable, active low
@@ -106,7 +106,7 @@ module matrix_mult_wrapper_<GROUP_NUMBER> #(
 
   // connect seeds
   assign driver_seed_w    = { ext_inputs_i.ext_input, ext_inputs_i.ext_psum };
-  assign sa_seed_w        = ext_inputs_i.ext_psum;
+  assign sa_seed_w        = { ext_inputs_i.ext_psum, ext_inputs_i.ext_input }; // if driver seed and sa seed are the same, weird things happen 
 
   // bypass external inputs that never go through the driver
   assign ext_inputs_w.ext_weight_en   = ext_inputs_i.ext_weight_en;
@@ -147,36 +147,36 @@ module matrix_mult_wrapper_<GROUP_NUMBER> #(
   //-------------------------------------------------------------------------//
   //    Matrix mult                                                          //
   //-------------------------------------------------------------------------//
-  // matrix_mult_<GROUP_NUMBER> #( .WIDTH(WIDTH) , .ROW(ROW) , .COL(COL) , .W_SIZE(W_SIZE) , .I_SIZE(I_SIZE) , .O_SIZE(O_SIZE) )
-  //   matrix_mult_<GROUP_NUMBER> (
-  //     .clk_i                (g_clk                ),
-  //     .rstn_i               (rstn_i               ),
-  //     .start_i              (start_i              ),
-  //     .data_config_i        (data_config_i        ),
-  //     .ob_mem_cenb_o        (ob_mem_cenb_o        ),
-  //     .ob_mem_wenb_o        (ob_mem_wenb_o        ),
-  //     .ob_mem_addr_o        (ob_mem_addr_o        ),
-  //     .ob_mem_data_o        (ob_mem_data_o_w      ),
-  //     .ob_mem_data_i        (ob_mem_data_i_w      ),
-  //     .ib_mem_cenb_o        (ib_mem_cenb_o        ),
-  //     .ib_mem_wenb_o        (ib_mem_wenb_o        ),
-  //     .ib_mem_addr_o        (ib_mem_addr_o        ),
-  //     .ib_mem_data_i        (ib_mem_data_i_w      ),
-  //     .wb_mem_cenb_o        (wb_mem_cenb_o        ),
-  //     .wb_mem_wenb_o        (wb_mem_wenb_o        ),
-  //     .wb_mem_addr_o        (wb_mem_addr_o        ),
-  //     .wb_mem_data_i        (wb_mem_data_i_w      ),
-  //     .ps_mem_cenb_o        (ps_mem_cenb_o        ),
-  //     .ps_mem_wenb_o        (ps_mem_wenb_o        ),
-  //     .ps_mem_addr_o        (ps_mem_addr_o        ),
-  //     .ps_mem_data_o        (ps_mem_data_o_w      ),
-  //     .ps_mem_data_i        (ps_mem_data_i_w      ),
-  //     .ext_en_i             (ext_en_i             ),
-  //     .ext_inputs_i         (ext_inputs_w         ),
-  //     .ext_result_o         (ext_result_w         ),
-  //     .ext_valid_o          (ext_valid_o_w        ),
-  //     .done_o               (done_o               )
-  //   );
+  matrix_mult #( .WIDTH(WIDTH) , .ROW(ROW) , .COL(COL) , .W_SIZE(W_SIZE) , .I_SIZE(I_SIZE) , .O_SIZE(O_SIZE) )
+    matrix_mult_0 (
+      .clk_i                (g_clk                ),
+      .rstn_i               (rstn_i               ),
+      .start_i              (start_i              ),
+      .data_config_i        (data_config_i        ),
+      .ob_mem_cenb_o        (ob_mem_cenb_o        ),
+      .ob_mem_wenb_o        (ob_mem_wenb_o        ),
+      .ob_mem_addr_o        (ob_mem_addr_o        ),
+      .ob_mem_data_o        (ob_mem_data_o_w      ),
+      .ob_mem_data_i        (ob_mem_data_i_w      ),
+      .ib_mem_cenb_o        (ib_mem_cenb_o        ),
+      .ib_mem_wenb_o        (ib_mem_wenb_o        ),
+      .ib_mem_addr_o        (ib_mem_addr_o        ),
+      .ib_mem_data_i        (ib_mem_data_i_w      ),
+      .wb_mem_cenb_o        (wb_mem_cenb_o        ),
+      .wb_mem_wenb_o        (wb_mem_wenb_o        ),
+      .wb_mem_addr_o        (wb_mem_addr_o        ),
+      .wb_mem_data_i        (wb_mem_data_i_w      ),
+      .ps_mem_cenb_o        (ps_mem_cenb_o        ),
+      .ps_mem_wenb_o        (ps_mem_wenb_o        ),
+      .ps_mem_addr_o        (ps_mem_addr_o        ),
+      .ps_mem_data_o        (ps_mem_data_o_w      ),
+      .ps_mem_data_i        (ps_mem_data_i_w      ),
+      .ext_en_i             (ext_en_i             ),
+      .ext_inputs_i         (ext_inputs_w         ),
+      .ext_result_o         (ext_result_w         ),
+      .ext_valid_o          (ext_valid_o_w        ),
+      .done_o               (done_o               )
+    );
 
   // dut bypass
   assign sa_dut_data_w  = ( dut_bypass_w ) ? { ext_input_w, ext_psum_w } : { {(WIDTH*ROW){1'b0}}, ext_result_w } ;

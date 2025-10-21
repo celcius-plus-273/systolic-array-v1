@@ -42,6 +42,9 @@ module sa_control
     // input logic i_en,           // clock gating?
     input logic i_start,        // mult start
     output logic o_done,        // mult done
+    
+    //-- data config --//
+    input data_config_struct data_config_i, // kind of like an instruction
 
     //-- systolic signals --//
     output logic o_mode,

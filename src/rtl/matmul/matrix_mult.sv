@@ -1,14 +1,14 @@
-module sa_matmul
+module matrix_mult
 #(
     // data params
-    parameter WIDTH,
+    parameter WIDTH = 8,
     // array params
-    parameter ROW,
-    parameter COL,
+    parameter ROW = 4,
+    parameter COL = 4,
     // memory params
-    parameter W_SIZE,
-    parameter I_SIZE,
-    parameter O_SIZE
+    parameter W_SIZE = 256,
+    parameter I_SIZE = 256,
+    parameter O_SIZE = 256
 ) (
     //--- Mat Mul Port ---//
     // clk, reset, control signals
@@ -69,6 +69,7 @@ module sa_matmul
         // .i_en(),    // not connected
         .i_start(start_i),
         .o_done(done_o),
+        .data_config_i(data_config_i),
 
         // systolic array control signals
         .o_mode(ctrl_mode),
@@ -93,6 +94,27 @@ module sa_matmul
     //----------------------------------//
     //--- Systolic Computation Array ---//
     //----------------------------------//
+    // External Control Signals
+    logic array_mode, array_load_psum;
+
+    // Control signals come from external port or internal controller
+    assign array_mode = ext_en_i ? ~ext_inputs_i.ext_weight_en : ctrl_mode;
+    assign array_load_psum = ext_en_i ? ~ext_inputs_i.ext_weight_en : ctrl_load_psum;
+
+    // External Data Signals
+    logic [ROW-1:0][WIDTH-1 : 0] i_act;
+    logic [COL-1:0][WIDTH-1 : 0] i_weight;
+    logic [COL-1:0][WIDTH-1 : 0] i_psum;
+    logic [COL-1:0][WIDTH-1 : 0] o_psum;
+
+    // mux b/w memory interface or external port interface
+    assign i_act    = ext_en_i ? ext_inputs_i.ext_input  : ib_mem_data_i;
+    assign i_weight = ext_en_i ? ext_inputs_i.ext_weight : wb_mem_data_i;
+    assign i_psum   = ext_en_i ? ext_inputs_i.ext_psum   : '0;
+
+    assign ob_mem_data_o    = ext_en_i ? '0 : o_psum;
+    assign ext_result_o     = ext_en_i ? o_psum : '0;
+
     sa_compute #(
         .MUL_DATAWIDTH(WIDTH),
         .ADD_DATAWIDTH(WIDTH),
@@ -102,18 +124,30 @@ module sa_matmul
         .clk(clk_i),
         .rst_n(rstn_i),
 
-        // control signals (coming from sa_control)
-        .i_mode(ctrl_mode),
-        .i_load_psum(ctrl_load_psum),
+        // control signals
+        .i_mode(array_mode),
+        .i_load_psum(array_load_psum),
 
         // input act port
-        .i_act(ib_mem_data_i),
+        .i_act(i_act),
         // weight port
-        .i_weight(wb_mem_data_i),
+        .i_weight(i_weight),
         // input psum port        
-        .i_psum('0),
+        .i_psum(i_psum),
         // output act port
-        .o_psum(ob_mem_data_o)
+        .o_psum(o_psum)
+    );
+
+    //---------------------------//
+    //--- Shift Reg for Valid ---//
+    //---------------------------//
+    shift_reg #(
+        .WIDTH(4)
+    ) valid_shift_reg (
+        .clk_i(clk_i),
+        .rstn_i(rstn_i),
+        .d_i(ext_inputs_i.ext_valid),
+        .q_o(ext_valid_o)
     );
 
 endmodule

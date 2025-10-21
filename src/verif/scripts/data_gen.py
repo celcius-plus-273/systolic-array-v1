@@ -25,10 +25,10 @@ def overflow_matmul(A, B, M, N, K):
             for k in range(K):
                 act = A[m][k]
                 weight = B[k][n]
-                # prod = np.clip(act * weight, -128, 127)
-                # psum = np.clip(psum + prod, -128, 127)
-                prod = act * weight
-                psum = np.clip(prod + psum, -128, 127)
+                prod = np.clip(act * weight, -128, 127)
+                psum = np.clip(psum + prod, -128, 127)
+                # prod = act * weight
+                # psum = np.clip(prod + psum, -128, 127)
                 f.write(f'k index = {k}\n')
                 f.write(f'{act} * {weight} = {prod}\n')
                 f.write(f'acc_psum = {psum}\n')

@@ -1,0 +1,30 @@
+// packages
+./rtl/matmul/matrix_mult_pkg.sv
+
+// systolic array
+./rtl/systolic/sa_mac_simple.sv
+./rtl/systolic/sa_pe.sv
+./rtl/systolic/sa_compute.sv
+./rtl/systolic/sa_include.sv
+./rtl/systolic/sa_control.sv
+
+// matmul
+./rtl/matmul/matrix_mult.sv
+./rtl/matmul/matrix_mult_wrapper.sv
+
+// memory
+./rtl/memory/mem_emulator.sv
+
+// bist
+./rtl/bist/pseudo_rand_num_gen_pkg.sv
+./rtl/bist/lfsr.sv
+./rtl/bist/misr.sv
+./rtl/bist/pseudo_rand_num_gen.sv
+./rtl/bist/signature_analizer.sv
+
+// misc
+./rtl/misc/async_nreset_synchronizer.sv
+./rtl/misc/shift_reg.sv
+
+// testbench
+./testbench/tb_matrix_mult.sv
